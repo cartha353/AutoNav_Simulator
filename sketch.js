@@ -1,4 +1,4 @@
-///<reference path="../TSDef/p5.global-mode.d.ts" />
+///<reference path=".\TSDef\p5.global-mode.d.ts" />
 
 let smoothControl;
 let img;
@@ -61,51 +61,30 @@ class Pose
 	{
 		this.triangleWidth = 20;
 		this.triangleHeight = 40;
-		this.velocityBrightness = 0;
+		this.arrowBrightness = 0;
 		this.triangleBrightness = 0;
-		this.x = x; 
-		this.y = y;
-		this.headingRadians = headingRadians;
-		this.velocity = velocity;
-	}
-
-	getTriangleX1()
-	{
-		return this.x
-	}
-
-	isWithinVelocity(x, y)
-	{
-		collidePointPoly();
-		//Check top left triangle
-		let y1 = (this.y + (this.triangleHeight/2)) * Math.cos(theta) - (this.x - (this.triangleWidth/2)) * Math.sin(theta) + centerY;
-		let x1 = (this.y + (this.triangleHeight/2)) * Math.sin(theta) + (this.x - (this.triangleWidth/2)) * Math.cos(theta) + centerX;
-
-		let y2 = (this.y + (this.triangleHeight/2)) * Math.cos(theta) - (this.x + (this.triangleWidth/2)) * Math.sin(theta) + centerY;
-		let x2 = (this.y + (this.triangleHeight/2)) * Math.sin(theta) + (this.x + (this.triangleWidth/2)) * Math.cos(theta) + centerX;
-
-		let y3 = (this.y - this.triangleHeight/2) * Math.cos(theta) - this.x * Math.sin(theta) + centerY;
-		let x3 = (this.y - this.triangleHeight/2) * Math.sin(theta) + this.x * Math.cos(theta) + centerX;
-
-		// get the area of the triangle
-		let areaOrig = Math.abs((x2-x1)*(y3-y1) - (x3-x1)*(y2-y1));
+		this.position = createVector(x,y);
+		this.v = fromAngle(headingRadians);
+		this.v.setMag(velocity);
 	}
 
 	isWithinTriangle(x, y)
 	{
-		let y1 = (this.y + (this.triangleHeight/2)) * Math.cos(theta) - (this.x - (this.triangleWidth/2)) * Math.sin(theta) + centerY;
-		let x1 = (this.y + (this.triangleHeight/2)) * Math.sin(theta) + (this.x - (this.triangleWidth/2)) * Math.cos(theta) + centerX;
+		let x = this.position.x;
+		let y = this.position.y;
+		let theta = v.heading();
+		let y1 = (y + (this.triangleHeight/2)) * Math.cos(theta) - (x - (this.triangleWidth/2)) * Math.sin(theta) + centerY;
+		let x1 = (y + (this.triangleHeight/2)) * Math.sin(theta) + (x - (this.triangleWidth/2)) * Math.cos(theta) + centerX;
 
-		let y2 = (this.y + (this.triangleHeight/2)) * Math.cos(theta) - (this.x + (this.triangleWidth/2)) * Math.sin(theta) + centerY;
-		let x2 = (this.y + (this.triangleHeight/2)) * Math.sin(theta) + (this.x + (this.triangleWidth/2)) * Math.cos(theta) + centerX;
+		let y2 = (y + (this.triangleHeight/2)) * Math.cos(theta) - (x + (this.triangleWidth/2)) * Math.sin(theta) + centerY;
+		let x2 = (y + (this.triangleHeight/2)) * Math.sin(theta) + (x + (this.triangleWidth/2)) * Math.cos(theta) + centerX;
 
-		let y3 = (this.y - this.triangleHeight/2) * Math.cos(theta) - this.x * Math.sin(theta) + centerY;
-		let x3 = (this.y - this.triangleHeight/2) * Math.sin(theta) + this.x * Math.cos(theta) + centerX;
+		let y3 = (y - this.triangleHeight/2) * Math.cos(theta) - x * Math.sin(theta) + centerY;
+		let x3 = (y - this.triangleHeight/2) * Math.sin(theta) + x * Math.cos(theta) + centerX;
 
 		// get the area of the triangle
 		let areaOrig = Math.abs((x2-x1)*(y3-y1) - (x3-x1)*(y2-y1));
 
-		
 		// get the area of 3 triangles made between the point
 		// and the corners of the triangle
 		let area1 = Math.abs( (x1-px)*(y2-py) - (x2-x)*(y1-y) );
@@ -126,15 +105,13 @@ class Pose
 
 	rollover(x, y)
 	{
-		if()
-		let gracePixels = 3;
-		if(gracePixels >= dist(x, y, this.x, this.y))
+		if(this.isWithinTriangle(x, y))
 		{
-			this.brightness = 255;
+			this.triangleBrightness = 255;
 		}
 		else
 		{
-			this.brightness = 0;
+			this.triangleBrightness = 0;
 		}
 	}
 
