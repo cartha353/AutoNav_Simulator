@@ -2,6 +2,13 @@
 
 let smoothControl;
 let img;
+let screenWidth = 760;
+let screenHeight = 380;
+let screenBorderX = 20;
+let screenBorderY = 20;
+let worldWidth = 30; //Feet
+let worldHeight = 15 //Feet
+
 function preload() {
   img = loadImage('assets/2021-slalom.png');
 }
@@ -12,14 +19,14 @@ function setup() {
 function setup() 
 {
 	createCanvas(800, 420);
-  	smoothControl = new SmoothControlPath();
+  smoothControl = new SmoothControlPath();
 }
 
 function draw()
 {
 	background(220);
-	drawGrid();
 	image(img, 0, 0);
+
 	smoothControl.draw();
 }
 
@@ -39,12 +46,18 @@ function drawGrid()
 
 function mousePressed()
 {
-	smoothControl.addOrSelect(mouseX, mouseY);
+	//smoothControl.addOrSelect(mouseX, mouseY);
+	smoothControl.select(mouseX, mouseY);
+}
+
+function mouseReleased()
+{
+	smoothControl.unselect(mouseX, mouseY);
 }
 
 function mouseDragged()
 {
-	smoothControl.updatePose(mouseX, mouseY);
+	smoothControl.movePose(mouseX, mouseY);
 }
 
 function keyPressed() 
@@ -60,44 +73,44 @@ class SmoothControlPath
 	constructor()
 	{
 		this.poses = [];
-		this.selectedPose = null;
+		this.isSelected = false;
+		this.selectedState = NOT_SELECTED; //In pose
+		this.selectedPoseInd = null;
 	}
 
-	addOrSelect(x, y)
+	select(x, y)
 	{
-		let gracePixels = 3;
-		this.selectedPose = null;
-		for(let i = 0; i < this.poses.length; i++)
+		if(this.selectedState != NOT_SELECTED)
 		{
-			if(gracePixels >= dist(x, y, this.poses[i].x, this.poses[i].y))
-			{
-				this.selectedPose = this.poses[i];
-				break;
-			}
-		}
-
-		if(null == this.selectedPose)
-		{
-			//No pose clicked, add pose
-			let headingRadians = random(0,1) * 2 * PI;
-			let pose = new TargetPosition2D(x, y, headingRadians,3);
-			this.poses.push(pose);
-			print("Added "+ pose.x + ", " + pose.y + ", " + pose.headingRadians);
-			this.selectedPose = pose;
-		}
-	}
-
-	updatePose(x,y)
-	{
-		if(null == this.selectedPose)
-		{
-			print("ERROR selected pose NULL! "+ x + ", " +y);
+			this.isSelected = true;
 		}
 		else
 		{
-			this.poses.
-			this.selectedPose.x = x;
-			this.selectedPose.y = y;
+			let worldMouse = this.screenSpaceToWorldSpace([x,y]);
+			let tempPose = new Pose(worldMouse[0], worldMouse[1], 0, 1);
+			this.poses.push(tempPose);
+		}
+	}
+
+	unselect(x, y)
+	{
+		this.isSelected = false;
+	}
+
+	movePose(x, y)
+	{
+		let worldMouse = this.screenSpaceToWorldSpace([x,y]);
+
+		if(this.selectedState == TRIANGLE_SELECTED)
+		{
+			this.poses[this.selectedPoseInd].movePose(worldMouse[0], worldMouse[1], this.poses[this.selectedPoseInd].headingRadians, this.poses[this.selectedPoseInd].velocity);
+		}
+		else if(this.selectedState == VELOCITY_SELECTED)
+		{
+			let headingVector = createVector(worldMouse[0] - this.poses[this.selectedPoseInd].position.x, worldMouse[1] - this.poses[this.selectedPoseInd].position.y);
+			let newHeading = headingVector.heading();
+			let newVelocity = headingVector.mag();
+			this.poses[this.selectedPoseInd].movePose(this.poses[this.selectedPoseInd].position.x, this.poses[this.selectedPoseInd].position.y, newHeading, newVelocity);
 		}
 	}
 
@@ -113,11 +126,80 @@ class SmoothControlPath
 		}
 	}
 
+	//Returns [x, y] in screen space (pixels)
+	worldSpaceToScreenSpace(worldSpace)
+	{
+		let screenSpace = [];
+		screenSpace[0] = (worldSpace[0]/worldWidth) * screenWidth + screenBorderX;
+		screenSpace[1] = screenHeight - ((worldSpace[1]/worldHeight) * screenHeight) + screenBorderY;
+
+		return screenSpace;
+	}
+
+	//Returns [x, y] in world space (feet)
+	screenSpaceToWorldSpace(screenSpace)
+	{
+		let worldSpace = [];
+		worldSpace[0] = ((screenSpace[0] - screenBorderX)/screenWidth) * worldWidth;
+		worldSpace[1] = worldHeight - (((screenSpace[1]-screenBorderY)/screenHeight) * worldHeight);
+
+		return worldSpace;
+	}
+
+	drawPose(pose)
+	{
+		let trianglePoints = new Array(pose.trianglePoints.length);
+		let velocityPoints = new Array(pose.velocityPoints.length);
+
+		for(let i = 0; i < pose.trianglePoints.length; i++)
+		{
+			trianglePoints[i] = this.worldSpaceToScreenSpace(pose.trianglePoints[i]);
+		}
+
+		for(let i = 0; i < pose.velocityPoints.length; i++)
+		{
+			velocityPoints[i] = this.worldSpaceToScreenSpace(pose.velocityPoints[i]);
+		}
+
+		push();
+		strokeWeight(1);
+		fill(0,0,200, pose.triangleBrightness);
+		triangle(trianglePoints[0][0], trianglePoints[0][1], 
+						 trianglePoints[1][0], trianglePoints[1][1],
+						 trianglePoints[2][0], trianglePoints[2][1]);
+		fill(255);
+		pop();
+
+		push();
+		strokeWeight(1);
+		fill(0,200,0, pose.velocityBrightness);
+		beginShape();
+		     vertex(velocityPoints[0][0], velocityPoints[0][1]); 
+				 vertex(velocityPoints[1][0], velocityPoints[1][1]);
+				 vertex(velocityPoints[2][0], velocityPoints[2][1]);
+				 vertex(velocityPoints[3][0], velocityPoints[3][1]);
+				 vertex(velocityPoints[0][0], velocityPoints[0][1]);
+		endShape();
+		pop();
+	}
+
 	draw()
 	{
+		let worldSpaceMouse = this.screenSpaceToWorldSpace([mouseX, mouseY]);
 		for(let i = 0; i < this.poses.length; i++)
 		{
-			this.poses[i].draw();
+			if(!this.isSelected)
+			{
+				//Current selection, do not change state
+				this.selectedState = this.poses[i].rollover(worldSpaceMouse[0], worldSpaceMouse[1]);
+				if(this.selectedState != NOT_SELECTED)
+				{
+					this.selectedPoseInd = i;
+				}
+			}
+
+			//Always draw
+			this.drawPose(this.poses[i]);
 		}
 	}
 }

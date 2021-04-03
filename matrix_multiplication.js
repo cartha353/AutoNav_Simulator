@@ -28,6 +28,10 @@ function mat_mul(a, b)
             }
         }
     }
+    else
+    {
+        print("Cannot multiply A and B");
+    }
 
     return result;
 }

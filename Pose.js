@@ -1,96 +1,109 @@
 ///<reference path=".\TSDef\p5.global-mode.d.ts" />
 
+var NOT_SELECTED = 0;
+var VELOCITY_SELECTED = 1;
+var TRIANGLE_SELECTED = 2;
+
 class Pose
 {
 	constructor(x, y, headingRadians, velocity)
 	{
-		this.triangleWidth = 20;
-		this.triangleHeight = 40;
-        this.trianglePoints = new Array(3);
-        this.velocityPoints = new Array(4);
-		this.arrowBrightness = 0;
-		this.triangleBrightness = 0;
-		this.position = createVector(x,y);
+		
+
+		this.triangleBase = 2.0; //In feet
+		this.triangleHeight = 2.0; //In feet
+		this.velocityBase = 0.5;  //In Feet 
+		this.velocityHeight = 1.0; //Will change with speed
+		this.sourceTrianglePoints = new Array(3);
+		this.trianglePoints = new Array(3);
+		this.sourceVelocityPoints = new Array(4);
+		this.velocityPoints = new Array(4);
+		this.velocityBrightness = 255;
+		this.triangleBrightness = 255;
+
+		//Save info for printout
+		this.position = createVector(x, y);
+		this.headingRadians = headingRadians;
+		this.velocity = velocity;
+		
+		//Create Triangle
+		this.sourceTrianglePoints[0] = [this.triangleHeight/2, 0, 1];
+		this.sourceTrianglePoints[1] = [-this.triangleHeight/2, this.triangleBase/2, 1];
+		this.sourceTrianglePoints[2] = [-this.triangleHeight/2, -this.triangleBase/2, 1];
+
+		//Create Velocity
+		this.sourceVelocityPoints[0] = [this.triangleHeight/2, this.velocityBase/2, 1];
+		this.sourceVelocityPoints[1] = [this.triangleHeight/2, -this.velocityBase/2 , 1];
+		this.sourceVelocityPoints[2] = [this.triangleHeight/2 + this.velocityHeight, -this.velocityBase/2, 1];
+		this.sourceVelocityPoints[3] = [this.triangleHeight/2 + this.velocityHeight, this.velocityBase/2, 1];
+
+		this.movePose(this.position.x, this.position.y, this.headingRadians, this.velocity);
 	}
 
-    trianglePointsToMat()
-    {
-        
-    }
-
-	isWithinTriangle(x, y)
+	movePose(tX, tY, headingRadians, velocity)
 	{
-		/*let x = this.position.x;
-		let y = this.position.y;
-		let theta = v.heading();
-		let y1 = (y + (this.triangleHeight/2)) * Math.cos(theta) - (x - (this.triangleWidth/2)) * Math.sin(theta) + centerY;
-		let x1 = (y + (this.triangleHeight/2)) * Math.sin(theta) + (x - (this.triangleWidth/2)) * Math.cos(theta) + centerX;
+		let motionMat = new Array(3);
 
-		let y2 = (y + (this.triangleHeight/2)) * Math.cos(theta) - (x + (this.triangleWidth/2)) * Math.sin(theta) + centerY;
-		let x2 = (y + (this.triangleHeight/2)) * Math.sin(theta) + (x + (this.triangleWidth/2)) * Math.cos(theta) + centerX;
+		motionMat[0] = [ Math.cos(headingRadians),  Math.sin(headingRadians), 0];
+		motionMat[1] = [-Math.sin(headingRadians),  Math.cos(headingRadians), 0];
+		motionMat[2] = [ 	 										tX, 					 			 			 tY, 1];
 
-		let y3 = (y - this.triangleHeight/2) * Math.cos(theta) - x * Math.sin(theta) + centerY;
-		let x3 = (y - this.triangleHeight/2) * Math.sin(theta) + x * Math.cos(theta) + centerX;
-
-		// get the area of the triangle
-		let areaOrig = Math.abs((x2-x1)*(y3-y1) - (x3-x1)*(y2-y1));
-
-		// get the area of 3 triangles made between the point
-		// and the corners of the triangle
-		let area1 = Math.abs( (x1-px)*(y2-py) - (x2-x)*(y1-y) );
-		let area2 = Math.abs( (x2-px)*(y3-py) - (x3-x)*(y2-y) );
-		let area3 = Math.abs( (x3-px)*(y1-py) - (x1-x)*(y3-y) );
-		
-		// if the sum of the three areas equals the original,
-		// we're inside the triangle!
-		if ((area1 + area2 + area3) == areaOrig) 
+		//Move and rotate triangle
+		for(let i = 0; i < this.trianglePoints.length; i++)
 		{
-			return true;
+			let tempA = [this.sourceTrianglePoints[i]];
+			this.trianglePoints[i] = mat_mul(tempA, motionMat)[0];
 		}
-		else
+
+		//Move and rotate velocity rectangle
+		let tempVelA = [];
+		tempVelA[0] = [this.sourceVelocityPoints[0]];
+		tempVelA[1] = [this.sourceVelocityPoints[1]];
+		tempVelA[2] = [[this.triangleHeight/2 + (this.velocityHeight * this.velocity), -this.velocityBase/2, 1]];
+		tempVelA[3] = [[this.triangleHeight/2 + (this.velocityHeight * this.velocity), this.velocityBase/2, 1]];
+		
+		for(let i = 0; i < this.velocityPoints.length; i++)
 		{
-			return false;
-		}*/
+			this.velocityPoints[i] = mat_mul(tempVelA[i], motionMat)[0];
+		}
+
+		//Save info
+		this.position = createVector(tX, tY);
+		this.headingRadians = headingRadians;
+		this.velocity = velocity;
 	}
 
 	rollover(x, y)
 	{
-		if(this.isWithinTriangle(x, y))
+		let selectedState = NOT_SELECTED;
+
+		if(collidePointPoly(x, y, 
+												[createVector(this.trianglePoints[0][0], this.trianglePoints[0][1]),
+												createVector(this.trianglePoints[1][0], this.trianglePoints[1][1]),
+												createVector(this.trianglePoints[2][0], this.trianglePoints[2][1])]))
 		{
-			this.triangleBrightness = 255;
+			this.triangleBrightness = 100;
+			selectedState = TRIANGLE_SELECTED;
 		}
 		else
 		{
-			this.triangleBrightness = 0;
+			this.triangleBrightness = 255;
 		}
-	}
 
-	drawVelocity()
-	{
-		//Draw arrow
-		push();
-		strokeWeight(3);
-		translate(this.x, this.y);
-		rotate(this.headingRadians);
-		line(0,0,0,0-(this.velocity*(800/30))); //800 pixels wide is 30ft
-		pop();
-	}
+		if(collidePointPoly(x, y, 
+			[createVector(this.velocityPoints[0][0], this.velocityPoints[0][1]),
+			 createVector(this.velocityPoints[1][0], this.velocityPoints[1][1]),
+			 createVector(this.velocityPoints[2][0], this.velocityPoints[2][1]),
+			 createVector(this.velocityPoints[3][0], this.velocityPoints[3][1])]))
+		{
+			this.velocityBrightness = 100;
+			selectedState = VELOCITY_SELECTED;
+		}
+		else
+		{
+			this.velocityBrightness = 255;
+		}
 
-	drawTriangle()
-	{
-		push();
-		angleMode(RADIANS);
-		translate(this.x, this.y);
-		rotate(this.headingRadians);
-		strokeWeight(1);
-		triangle(0 - (this.triangleWidth/2), 0 + (this.triangleHeight/2), 0 + (this.triangleWidth/2), 0 + (this.triangleHeight/2), 0, 0 - (this.triangleHeight/2));
-		fill(255);
-		pop();
-	}
-
-	draw()
-	{
-		drawVelocity();
-		drawTriangle();
+		return selectedState;
 	}
 }
