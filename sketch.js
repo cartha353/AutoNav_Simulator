@@ -32,24 +32,16 @@ function draw()
 	smoothControl.draw();
 }
 
-function drawGrid() 
-{
-	stroke(200);
-	fill(120);
-	for (var x=-width; x < width; x+=40) {
-		line(x, -height, x, height);
-		text(x, x+1, 12);
-	}
-	for (var y=-height; y < height; y+=40) {
-		line(-width, y, width, y);
-		text(y, 1, y+12);
-	}
-}
-
 function mousePressed()
 {
-	//smoothControl.addOrSelect(mouseX, mouseY);
-	smoothControl.selectPose(mouseX, mouseY);
+	if(LEFT == mouseButton)
+	{
+		smoothControl.selectPose(mouseX, mouseY);
+	}
+	else if(CENTER == mouseButton)
+	{
+		smoothControl.deletePose(mouseX, mouseY);
+	}
 }
 
 function mouseReleased()
@@ -62,14 +54,6 @@ function mouseDragged()
 	smoothControl.updatePoses(mouseX, mouseY);
 }
 
-function keyPressed() 
-{
-	if (keyCode === DELETE) 
-	{
-		smoothControl.deletePose();
-	}
-}
-
 class SmoothControlPath
 {
 	constructor()
@@ -80,13 +64,17 @@ class SmoothControlPath
 
 	deletePose()
 	{
-		if(null == this.selectedPose)
+		//Reverse list of poses to prioritize deleting most recent poses first.
+		//Only deletes one pose if that pose is selected
+		for(let i = this.poses.length-1; i >= 0; i--)
 		{
-			print("No pose to delete. "+ x + ", " +y);
-		}
-		else
-		{
-			this.selectedPose;
+			if(this.poses[i].select())
+			{
+				//Remove pose from array
+				this.poses.splice(i,1);
+				//Break so we only delete one pose at a time
+				break;
+			}
 		}
 	}
 
