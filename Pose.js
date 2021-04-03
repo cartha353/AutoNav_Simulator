@@ -8,7 +8,8 @@ class Pose
 {
 	constructor(x, y, headingRadians, velocity)
 	{
-		
+		this.selectedState = NOT_SELECTED;
+		this.rolloverState = NOT_SELECTED;
 
 		this.triangleBase = 2.0; //In feet
 		this.triangleHeight = 2.0; //In feet
@@ -18,8 +19,6 @@ class Pose
 		this.trianglePoints = new Array(3);
 		this.sourceVelocityPoints = new Array(4);
 		this.velocityPoints = new Array(4);
-		this.velocityBrightness = 255;
-		this.triangleBrightness = 255;
 
 		//Save info for printout
 		this.position = createVector(x, y);
@@ -40,13 +39,31 @@ class Pose
 		this.movePose(this.position.x, this.position.y, this.headingRadians, this.velocity);
 	}
 
+	updatePose(x, y)
+	{
+		switch(this.selectedState)
+		{
+			case TRIANGLE_SELECTED:
+				this.movePose(x, y, this.headingRadians, this.velocity);
+			break;
+			case VELOCITY_SELECTED:
+				let headingVector = createVector(x - this.position.x, y - this.position.y);
+				let newHeading = headingVector.heading();
+				let newVelocity = headingVector.mag();
+				this.movePose(this.position.x, this.position.y, newHeading, newVelocity);	
+			break;
+			default:
+			break;
+		}
+	}
+
 	movePose(tX, tY, headingRadians, velocity)
 	{
 		let motionMat = new Array(3);
 
 		motionMat[0] = [ Math.cos(headingRadians),  Math.sin(headingRadians), 0];
 		motionMat[1] = [-Math.sin(headingRadians),  Math.cos(headingRadians), 0];
-		motionMat[2] = [ 	 										tX, 					 			 			 tY, 1];
+		motionMat[2] = [                       tX,                        tY, 1];
 
 		//Move and rotate triangle
 		for(let i = 0; i < this.trianglePoints.length; i++)
@@ -75,35 +92,43 @@ class Pose
 
 	rollover(x, y)
 	{
-		let selectedState = NOT_SELECTED;
-
+		//Check triangle collision
 		if(collidePointPoly(x, y, 
-												[createVector(this.trianglePoints[0][0], this.trianglePoints[0][1]),
-												createVector(this.trianglePoints[1][0], this.trianglePoints[1][1]),
-												createVector(this.trianglePoints[2][0], this.trianglePoints[2][1])]))
+                        [createVector(this.trianglePoints[0][0], this.trianglePoints[0][1]),
+                         createVector(this.trianglePoints[1][0], this.trianglePoints[1][1]),
+                         createVector(this.trianglePoints[2][0], this.trianglePoints[2][1])]))
 		{
-			this.triangleBrightness = 100;
-			selectedState = TRIANGLE_SELECTED;
+			this.rolloverState = TRIANGLE_SELECTED;
+		}
+		else if(collidePointPoly(x, y, 
+			     [createVector(this.velocityPoints[0][0], this.velocityPoints[0][1]),
+			      createVector(this.velocityPoints[1][0], this.velocityPoints[1][1]),
+			      createVector(this.velocityPoints[2][0], this.velocityPoints[2][1]),
+			      createVector(this.velocityPoints[3][0], this.velocityPoints[3][1])]))
+		{
+			this.rolloverState = VELOCITY_SELECTED;
 		}
 		else
 		{
-			this.triangleBrightness = 255;
+			this.rolloverState = NOT_SELECTED;
+		}
+	}
+
+	select()
+	{
+		let selected = false;
+
+		if(NOT_SELECTED != this.rolloverState)
+		{
+			this.selectedState = this.rolloverState;
+			selected = true;
 		}
 
-		if(collidePointPoly(x, y, 
-			[createVector(this.velocityPoints[0][0], this.velocityPoints[0][1]),
-			 createVector(this.velocityPoints[1][0], this.velocityPoints[1][1]),
-			 createVector(this.velocityPoints[2][0], this.velocityPoints[2][1]),
-			 createVector(this.velocityPoints[3][0], this.velocityPoints[3][1])]))
-		{
-			this.velocityBrightness = 100;
-			selectedState = VELOCITY_SELECTED;
-		}
-		else
-		{
-			this.velocityBrightness = 255;
-		}
+		return selected;
+	}
 
-		return selectedState;
+	deselect()
+	{
+		this.selectedState = NOT_SELECTED;
 	}
 }
