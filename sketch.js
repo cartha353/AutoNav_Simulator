@@ -40,26 +40,26 @@ function setup()
 	//Create buttons
 	let buttonYLocation = img.height + table.height;
 	//Create CSV button
-	writeToCsvButton = createButton("writeToCsv", "Click to write to CSV");
+	writeToCsvButton = createButton("Write Data", "Click to write to CSV");
 	writeToCsvButton.parent("#buttons");
 	writeToCsvButton.position((windowWidth - width) / 2, buttonYLocation);
 	writeToCsvButton.mousePressed(writeDataToCsv);
 
 	//Create image buttons
 	buttonYLocation += writeToCsvButton.height + 10;
-	slalomButton = createButton("slalom", "Click to change to slalom");
+	slalomButton = createButton("Slalom Field", "Click to change to slalom");
 	slalomButton.parent("#buttons");
 	slalomButton.position((windowWidth - width) / 2, buttonYLocation);
 	slalomButton.mousePressed(function(){ img = slalomImg;});
 
 	buttonYLocation += slalomButton.height + 10;
-	bounceButton = createButton("bounce", "Click to change to slalom");
+	bounceButton = createButton("Bounce Field", "Click to change to slalom");
 	bounceButton.parent("#buttons");
 	bounceButton.position((windowWidth - width) / 2, buttonYLocation);
 	bounceButton.mousePressed(function(){ img = bounceImg;});
 
 	buttonYLocation += bounceButton.height + 10;
-	barrelButton = createButton("barrel", "Click to change to slalom");
+	barrelButton = createButton("Barrel Field", "Click to change to slalom");
 	barrelButton.parent("#buttons");
 	barrelButton.position((windowWidth - width) / 2, buttonYLocation);
 	barrelButton.mousePressed(function(){ img = barrelImg;});
