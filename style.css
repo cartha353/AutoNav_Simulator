@@ -6,3 +6,18 @@ html, body {
 canvas {
   display: block;
 }
+
+#sketch_location.center{
+  margin-left: auto;
+  margin-right: auto;
+}
+
+table, th, td {
+  padding: 10px;
+  border: 1px solid black;
+}
+
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}

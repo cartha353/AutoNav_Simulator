@@ -11,17 +11,73 @@ let worldHeight = 15 //Feet
 let DEFAULT_BRIGHTNESS = 255;
 let ROLLOVER_BRIGHTNESS = 60;
 
+//DOM elements
+let table;
+let rows = [];
+
+
 function preload() {
   img = loadImage('assets/2021-slalom.png');
-}
-function setup() {
-  image(img, 0, 0);
 }
 
 function setup() 
 {
-	createCanvas(800, 420);
+	let canvas = createCanvas(800, 420);
+	image(img, 0, 0);
   smoothControl = new SmoothControlPath();
+	createTable();
+	canvas.parent("sketch_location");
+	canvas.position((windowWidth - width) / 2, 0);
+	let dataDiv = select("#data_div");
+	dataDiv.position((windowWidth - table.width) / 2, img.height);
+}
+
+
+function createTable()
+{
+	table = select("#table_body");
+}
+
+function clearTable()
+{
+	for(let i = 0; i < rows.length; i++)
+	{
+		select("#row"+i).remove();
+	}
+	rows = [];
+}
+
+function updateTable()
+{
+	clearTable();
+
+	rows = new Array(smoothControl.poses.length);
+	for(let r = 0; r < rows.length; r++)
+	{
+		rows[r] = new Array(5);
+		rows[r][0] = createElement("tr");
+		rows[r][0].id("row"+r);
+		rows[r][0].parent(table);
+		//X
+		rows[r][1] = createElement("td");
+		rows[r][1].html(round(smoothControl.poses[r].position.x, 3));
+		rows[r][1].parent(rows[r][0]);
+
+		//Y
+		rows[r][2] = createElement("td");
+		rows[r][2].html(round(smoothControl.poses[r].position.y, 3));
+		rows[r][2].parent(rows[r][0]);
+
+		//Heading
+		rows[r][3] = createElement("td");
+		rows[r][3].html(round(degrees(smoothControl.poses[r].headingRadians), 3));
+		rows[r][3].parent(rows[r][0]);
+
+		//Velocity
+		rows[r][4] = createElement("td");
+		rows[r][4].html(round(smoothControl.poses[r].velocity, 3));
+		rows[r][4].parent(rows[r][0]);	
+	}
 }
 
 function draw()
@@ -34,13 +90,18 @@ function draw()
 
 function mousePressed()
 {
-	if(LEFT == mouseButton)
+	//Prevent mouse click from out of bounds
+	if(((mouseX > 0) && (mouseX < img.width))
+	&& ((mouseY > 0) && (mouseY < img.height)))
 	{
-		smoothControl.selectPose(mouseX, mouseY);
-	}
-	else if(CENTER == mouseButton)
-	{
-		smoothControl.deletePose(mouseX, mouseY);
+		if(LEFT == mouseButton)
+		{
+			smoothControl.selectPose(mouseX, mouseY);
+		}
+		else if(CENTER == mouseButton)
+		{
+			smoothControl.deletePose(mouseX, mouseY);
+		}
 	}
 }
 
@@ -171,6 +232,8 @@ class SmoothControlPath
 				 vertex(velocityPoints[0][0], velocityPoints[0][1]);
 		endShape();
 		pop();
+
+		updateTable();
 	}
 
 	updatePoses(x, y)
