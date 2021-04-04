@@ -14,7 +14,7 @@ let ROLLOVER_BRIGHTNESS = 60;
 //DOM elements
 let table;
 let rows = [];
-
+let writeToCsvButton;
 
 function preload() {
   img = loadImage('assets/2021-slalom.png');
@@ -30,8 +30,51 @@ function setup()
 	canvas.position((windowWidth - width) / 2, 0);
 	let dataDiv = select("#data_div");
 	dataDiv.position((windowWidth - table.width) / 2, img.height);
+
+	//Create CSV button
+	writeToCsvButton = createButton("writeToCsv", "Click to write to CSV");
+	writeToCsvButton.parent("#buttons");
+	writeToCsvButton.position((windowWidth - width) / 2, img.height + table.height);
+	writeToCsvButton.mousePressed(writeDataToCsv);
 }
 
+function writeDataToCsv()
+{
+	//Save CSV
+	let data = new p5.Table();
+	data.addColumn("X");
+	data.addColumn("Y");
+	data.addColumn("H");
+	data.addColumn("V");
+
+	for(let i = 0; i < smoothControl.poses.length; i++)
+	{
+		let pose = smoothControl.poses[i];
+		let newRow = data.addRow();
+		newRow.setString("X", str(pose.position.x));
+		newRow.setString("Y", str(pose.position.y));
+		newRow.setString("H", str(degrees(pose.headingRadians)));
+		newRow.setString("V", str(pose.velocity));
+	}
+
+	saveTable(data, '.\data.csv', "csv");
+
+	//Save Java
+	data = new p5.Table();
+	data.addColumn("Java");
+	for(let i = 0; i < smoothControl.poses.length; i++)
+	{
+		let pose = smoothControl.poses[i];
+
+		let newRow = data.addRow();
+		let stringOut = "CHANGEME.add(new TargetPosition2D("+str(pose.position.x) + 
+		", " + str(pose.position.y) + 
+		", Math.toRadians(" + str(degrees(pose.headingRadians)) + ")" +
+		", " + str(pose.velocity) + "d));";
+		newRow.setString("Java", stringOut);
+	}
+	saveTable(data, '.\java.txt', "txt");
+}
 
 function createTable()
 {
