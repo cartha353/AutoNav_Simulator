@@ -15,14 +15,20 @@ let ROLLOVER_BRIGHTNESS = 60;
 let table;
 let rows = [];
 let writeToCsvButton;
+let slalomButton;
+let bounceButton;
+let barrelButton;
 
 function preload() {
-  img = loadImage('assets/2021-slalom.png');
+  slalomImg = loadImage('assets/2021-slalom.png');
+	bounceImg = loadImage('assets/2021-bounce.png');
+	barrelImg = loadImage('assets/2021-barrel.png');
 }
 
 function setup() 
 {
 	let canvas = createCanvas(800, 420);
+	img = slalomImg;
 	image(img, 0, 0);
   smoothControl = new SmoothControlPath();
 	createTable();
@@ -31,11 +37,32 @@ function setup()
 	let dataDiv = select("#data_div");
 	dataDiv.position((windowWidth - table.width) / 2, img.height);
 
+	//Create buttons
+	let buttonYLocation = img.height + table.height;
 	//Create CSV button
 	writeToCsvButton = createButton("writeToCsv", "Click to write to CSV");
 	writeToCsvButton.parent("#buttons");
-	writeToCsvButton.position((windowWidth - width) / 2, img.height + table.height);
+	writeToCsvButton.position((windowWidth - width) / 2, buttonYLocation);
 	writeToCsvButton.mousePressed(writeDataToCsv);
+
+	//Create image buttons
+	buttonYLocation += writeToCsvButton.height + 10;
+	slalomButton = createButton("slalom", "Click to change to slalom");
+	slalomButton.parent("#buttons");
+	slalomButton.position((windowWidth - width) / 2, buttonYLocation);
+	slalomButton.mousePressed(function(){ img = slalomImg;});
+
+	buttonYLocation += slalomButton.height + 10;
+	bounceButton = createButton("bounce", "Click to change to slalom");
+	bounceButton.parent("#buttons");
+	bounceButton.position((windowWidth - width) / 2, buttonYLocation);
+	bounceButton.mousePressed(function(){ img = bounceImg;});
+
+	buttonYLocation += bounceButton.height + 10;
+	barrelButton = createButton("barrel", "Click to change to slalom");
+	barrelButton.parent("#buttons");
+	barrelButton.position((windowWidth - width) / 2, buttonYLocation);
+	barrelButton.mousePressed(function(){ img = barrelImg;});
 }
 
 function writeDataToCsv()
