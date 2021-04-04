@@ -1,5 +1,8 @@
 ///<reference path=".\TSDef\p5.global-mode.d.ts" />
 
+var WHEEL_BASE = 24.831/12.0;
+var WHEEL_DIAMETER = 6.0/12.0;
+
 var NOT_SELECTED = 0;
 var VELOCITY_SELECTED = 1;
 var TRIANGLE_SELECTED = 2;
@@ -10,6 +13,7 @@ class Pose
 	{
 		this.selectedState = NOT_SELECTED;
 		this.rolloverState = NOT_SELECTED;
+		this.pathToNextPose = []; //Holds the coordinates and headings of the path to the next pose
 
 		this.triangleBase = 2.0; //In feet
 		this.triangleHeight = 2.0; //In feet
@@ -130,5 +134,38 @@ class Pose
 	deselect()
 	{
 		this.selectedState = NOT_SELECTED;
+	}
+
+	populatePathList(targetPosition)
+	{
+		let rangeThreshold = WHEEL_BASE / 4;
+		let dt = 0.02; //Amount of time between steps
+		let maxSteps = 100000;
+		let steps = 0;
+		let omegaDesired = 0;
+
+		//Clear current path
+		this.clearPathList();
+
+		let currentPosition = [this.position.x, this.position.y, this.headingRadians];
+
+		while((rangeThreshold <= calculateRange(currentPosition, targetPosition)) && (steps <= maxSteps))
+		{
+			omegaDesired = calculateTurnRate(currentPosition, targetPosition, this.velocity);
+
+			//Calculate vR in feet per second
+			let vR = this.velocity + (WHEEL_BASE/2)*omegaDesired;
+			//Calculate vL in feet per second
+			let vL = this.velocity - (WHEEL_BASE/2)*omegaDesired;
+
+			currentPosition = calculateNewPosition(currentPosition, vL, vR, dt, WHEEL_DIAMETER, WHEEL_BASE);
+			this.pathToNextPose.push([currentPosition[0], currentPosition[1]]);
+			steps++;
+		}
+	}
+
+	clearPathList()
+	{
+		this.pathToNextPose = [];
 	}
 }

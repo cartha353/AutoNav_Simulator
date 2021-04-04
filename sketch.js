@@ -60,6 +60,12 @@ class SmoothControlPath
 	{
 		this.poses = [];
 		this.isSelected = false;
+
+		let tempPose = new Pose(0, 0, 0, 1);
+		this.poses.push(tempPose);
+
+		let tempPose2 = new Pose(2, 2, 0, 1);
+		this.poses.push(tempPose2);
 	}
 
 	deletePose()
@@ -102,6 +108,8 @@ class SmoothControlPath
 	{
 		let trianglePoints = new Array(pose.trianglePoints.length);
 		let velocityPoints = new Array(pose.velocityPoints.length);
+		let pathPoints = new Array(pose.pathToNextPose.length);
+
 		let triangleBrightness = DEFAULT_BRIGHTNESS;
 		let velocityBrightness = DEFAULT_BRIGHTNESS;
 
@@ -123,6 +131,24 @@ class SmoothControlPath
 		{
 			velocityPoints[i] = this.worldSpaceToScreenSpace(pose.velocityPoints[i]);
 		}
+
+		for(let i = 0; i < pose.pathToNextPose.length; i++)
+		{
+			pathPoints[i] = this.worldSpaceToScreenSpace(pose.pathToNextPose[i]);
+		}
+
+		//Draw path to next pose
+		push();
+		strokeWeight(5);
+		noFill();
+		beginShape();
+		curveVertex(createVector(pose.position.x, pose.position.y));
+		for(let i = 0; i < pathPoints.length; i++)
+		{
+			curveVertex(pathPoints[i][0], pathPoints[i][1]);
+		}
+		endShape();
+		pop();
 
 		//Draw triangle
 		push();
@@ -192,11 +218,21 @@ class SmoothControlPath
 	{
 		let worldSpaceMouse = this.screenSpaceToWorldSpace([mouseX, mouseY]);
 		//Always draw
-		this.poses.forEach(function(pose)
+		for(let i = 0; i < this.poses.length; i++)
 		{
+			let pose = this.poses[i]; 
 			pose.rollover(worldSpaceMouse[0], worldSpaceMouse[1]);
 			pose.updatePose(worldSpaceMouse[0], worldSpaceMouse[1]);
+			pose.clearPathList();
+			
+			//If there is a next pose, calculate the path between the two to draw
+			if((i+1) < this.poses.length)
+			{
+				let targetPosition = [this.poses[i+1].position.x, this.poses[i+1].position.y, this.poses[i+1].headingRadians];
+				pose.populatePathList(targetPosition);
+			}
+
 			smoothControl.drawPose(pose);
-		});
+		}
 	}
 }
