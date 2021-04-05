@@ -15,6 +15,7 @@ For now this is only supported in Firefox and VSCode.
   2. Enter security.fileuri.strict_origin_policy in the search bar and change that to false
   - This will allow local javascript files to run on your PC.  **__THIS DANGEROUS AND SHOULD BE REVERSED WHEN DONE!__**
 2. After downloading the AutoNav_Simulator repo, double click on index.html
+3. Open "about:config" in the browser and change the security.fileuri.strict_origin_policy to true!
 
 #Controls
 Left click on a the field to add a new pose.
@@ -28,6 +29,7 @@ Click the Write Data button to export the data into a csv file (usable in MATLAB
 # ToDo
 - Add angular velocity limits
 - Verify data is correct
+- Allow user to change K1 and K2
 - Add how to use instructions in sketch
 - Fix the terrible looking GUI (I'm no artist)
 
