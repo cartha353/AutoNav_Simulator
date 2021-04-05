@@ -63,6 +63,7 @@ function setup()
 	barrelButton.parent("#buttons");
 	barrelButton.position((windowWidth - width) / 2, buttonYLocation);
 	barrelButton.mousePressed(function(){ img = barrelImg;});
+
 }
 
 function writeDataToCsv()
@@ -81,7 +82,7 @@ function writeDataToCsv()
 		newRow.setString("X", str(pose.position.x));
 		newRow.setString("Y", str(pose.position.y));
 		newRow.setString("H", str(degrees(pose.headingRadians)));
-		newRow.setString("V", str(pose.velocity));
+		newRow.setString("V", str(pose.getVelocity()));
 	}
 
 	saveTable(data, '.\data.csv', "csv");
@@ -97,7 +98,7 @@ function writeDataToCsv()
 		let stringOut = "CHANGEME.add(new TargetPosition2D("+str(pose.position.x) + 
 		", " + str(pose.position.y) + 
 		", Math.toRadians(" + str(degrees(pose.headingRadians)) + ")" +
-		", " + str(pose.velocity) + "d));";
+		", " + str(pose.getVelocity()) + "d));";
 		newRow.setString("Java", stringOut);
 	}
 	saveTable(data, '.\java.txt', "txt");
@@ -145,7 +146,7 @@ function updateTable()
 
 		//Velocity
 		rows[r][4] = createElement("td");
-		rows[r][4].html(round(smoothControl.poses[r].velocity, 3));
+		rows[r][4].html(round(smoothControl.poses[r].getVelocity(), 3));
 		rows[r][4].parent(rows[r][0]);	
 	}
 }
@@ -185,15 +186,24 @@ function mouseDragged()
 	smoothControl.updatePoses(mouseX, mouseY);
 }
 
+function keyPressed()
+{
+	if(keyCode == 82)
+	{
+		smoothControl.reversePoseVelocity();
+	}
+	else if(keyCode == 84)
+	{
+		smoothControl.reversePoseHeading();
+	}
+}
+
 class SmoothControlPath
 {
 	constructor()
 	{
 		this.poses = [];
 		this.isSelected = false;
-
-		let tempPose = new Pose(0, 0, 0, 1);
-		this.poses.push(tempPose);
 
 		let tempPose2 = new Pose(2, 2, 0, 1);
 		this.poses.push(tempPose2);
@@ -233,6 +243,22 @@ class SmoothControlPath
 		worldSpace[1] = worldHeight - (((screenSpace[1]-screenBorderY)/screenHeight) * worldHeight);
 
 		return worldSpace;
+	}
+
+	reversePoseVelocity()
+	{
+		this.poses.forEach(function(pose)
+		{
+			pose.reverseVelocity();
+		});
+	}
+
+	reversePoseHeading()
+	{
+		this.poses.forEach(function(pose)
+		{
+			pose.reverseHeading();
+		});
 	}
 
 	drawPose(pose)

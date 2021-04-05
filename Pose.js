@@ -23,11 +23,14 @@ class Pose
 		this.trianglePoints = new Array(3);
 		this.sourceVelocityPoints = new Array(4);
 		this.velocityPoints = new Array(4);
+		this.velocityReversedModified = 1;
+		this.headingReversedModified = 0;
 
 		//Save info for printout
 		this.position = createVector(x, y);
 		this.headingRadians = headingRadians;
 		this.velocity = velocity;
+		this.velocityIsReversed = false;
 		
 		//Create Triangle
 		this.sourceTrianglePoints[0] = [this.triangleHeight/2, 0, 1];
@@ -43,18 +46,47 @@ class Pose
 		this.movePose(this.position.x, this.position.y, this.headingRadians, this.velocity);
 	}
 
+	reverseVelocity()
+	{
+		//If pose is rolled over
+		if(this.rolloverState != NOT_SELECTED)
+		{
+			this.velocityReversedModified *= -1;
+		}
+	}
+
+	reverseHeading()
+	{
+		//If pose is rolled over
+		if(this.rolloverState != NOT_SELECTED)
+		{
+			this.headingReversedModified += PI;
+		}
+	}
+
+	getVelocity()
+	{
+		return this.velocity * this.velocityReversedModified;
+	}
+
+	getHeading()
+	{
+		return this.headingRadians + this.headingReversedModified;
+	}
+
 	updatePose(x, y)
 	{
 		switch(this.selectedState)
 		{
 			case TRIANGLE_SELECTED:
-				this.movePose(x, y, this.headingRadians, this.velocity);
+				this.position = createVector(x, y);
+				this.movePose(x, y, this.getHeading(), this.getVelocity());
 			break;
 			case VELOCITY_SELECTED:
 				let headingVector = createVector(x - this.position.x, y - this.position.y);
-				let newHeading = headingVector.heading();
-				let newVelocity = headingVector.mag();
-				this.movePose(this.position.x, this.position.y, newHeading, newVelocity);	
+				this.headingRadians = headingVector.heading();
+				this.velocity = headingVector.mag();
+				this.movePose(this.position.x, this.position.y, this.getHeading(), this.getVelocity());
 			break;
 			default:
 			break;
@@ -80,39 +112,33 @@ class Pose
 		let tempVelA = [];
 		tempVelA[0] = [this.sourceVelocityPoints[0]];
 		tempVelA[1] = [this.sourceVelocityPoints[1]];
-		tempVelA[2] = [[this.triangleHeight/2 + (this.velocityHeight * this.velocity), -this.velocityBase/2, 1]];
-		tempVelA[3] = [[this.triangleHeight/2 + (this.velocityHeight * this.velocity), this.velocityBase/2, 1]];
+		tempVelA[2] = [[this.triangleHeight/2 + (this.velocityHeight * velocity), -this.velocityBase/2, 1]];
+		tempVelA[3] = [[this.triangleHeight/2 + (this.velocityHeight * velocity), this.velocityBase/2, 1]];
 		
 		for(let i = 0; i < this.velocityPoints.length; i++)
 		{
 			this.velocityPoints[i] = mat_mul(tempVelA[i], motionMat)[0];
 		}
-
-		//Save info
-		this.position = createVector(tX, tY);
-		this.headingRadians = headingRadians;
-		this.velocity = velocity;
 	}
 
 	rollover(x, y)
 	{
-		//Check triangle collision
 		if(collidePointPoly(x, y, 
-                        [createVector(this.trianglePoints[0][0], this.trianglePoints[0][1]),
-                         createVector(this.trianglePoints[1][0], this.trianglePoints[1][1]),
-                         createVector(this.trianglePoints[2][0], this.trianglePoints[2][1])]))
+			[createVector(this.velocityPoints[0][0], this.velocityPoints[0][1]),
+			 createVector(this.velocityPoints[1][0], this.velocityPoints[1][1]),
+			 createVector(this.velocityPoints[2][0], this.velocityPoints[2][1]),
+			 createVector(this.velocityPoints[3][0], this.velocityPoints[3][1])]))
+		{
+		this.rolloverState = VELOCITY_SELECTED;
+		}
+		else if(collidePointPoly(x, y, 
+                            [createVector(this.trianglePoints[0][0], this.trianglePoints[0][1]),
+                             createVector(this.trianglePoints[1][0], this.trianglePoints[1][1]),
+                             createVector(this.trianglePoints[2][0], this.trianglePoints[2][1])]))
 		{
 			this.rolloverState = TRIANGLE_SELECTED;
 		}
-		else if(collidePointPoly(x, y, 
-			     [createVector(this.velocityPoints[0][0], this.velocityPoints[0][1]),
-			      createVector(this.velocityPoints[1][0], this.velocityPoints[1][1]),
-			      createVector(this.velocityPoints[2][0], this.velocityPoints[2][1]),
-			      createVector(this.velocityPoints[3][0], this.velocityPoints[3][1])]))
-		{
-			this.rolloverState = VELOCITY_SELECTED;
-		}
-		else
+		else 
 		{
 			this.rolloverState = NOT_SELECTED;
 		}
@@ -147,16 +173,16 @@ class Pose
 		//Clear current path
 		this.clearPathList();
 
-		let currentPosition = [this.position.x, this.position.y, this.headingRadians];
+		let currentPosition = [this.position.x, this.position.y, this.getHeading()];
 
 		while((rangeThreshold <= calculateRange(currentPosition, targetPosition)) && (steps <= maxSteps))
 		{
-			omegaDesired = calculateTurnRate(currentPosition, targetPosition, this.velocity);
+			omegaDesired = calculateTurnRate(currentPosition, targetPosition, this.getVelocity());
 
 			//Calculate vR in feet per second
-			let vR = this.velocity + (WHEEL_BASE/2)*omegaDesired;
+			let vR = this.getVelocity() + (WHEEL_BASE/2)*omegaDesired;
 			//Calculate vL in feet per second
-			let vL = this.velocity - (WHEEL_BASE/2)*omegaDesired;
+			let vL = this.getVelocity() - (WHEEL_BASE/2)*omegaDesired;
 
 			currentPosition = calculateNewPosition(currentPosition, vL, vR, dt, WHEEL_DIAMETER, WHEEL_BASE);
 			this.pathToNextPose.push([currentPosition[0], currentPosition[1]]);
