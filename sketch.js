@@ -20,16 +20,13 @@ let bounceButton;
 let barrelButton;
 
 function preload() {
-  slalomImg = loadImage('assets/2021-slalom.png');
-	bounceImg = loadImage('assets/2021-bounce.png');
-	barrelImg = loadImage('assets/2021-barrel.png');
-	infiniteImg = loadImage('assets/2021-infinite.png');
+	infiniteImg = loadImage('assets/infinite.png');
 }
 
 function setup() 
 {
 	let canvas = createCanvas(800, 420);
-	img = slalomImg;
+	img = infiniteImg;
 	image(img, 0, 0);
   smoothControl = new SmoothControlPath();
 	createTable();
@@ -48,28 +45,11 @@ function setup()
 
 	//Create image buttons
 	buttonYLocation += writeToCsvButton.height + 10;
-	slalomButton = createButton("Slalom Field", "Click to change to slalom");
-	slalomButton.parent("#buttons");
-	slalomButton.position((windowWidth - width) / 2, buttonYLocation);
-	slalomButton.mousePressed(function(){ img = slalomImg;});
-
-	buttonYLocation += slalomButton.height + 10;
-	bounceButton = createButton("Bounce Field", "Click to change to slalom");
-	bounceButton.parent("#buttons");
-	bounceButton.position((windowWidth - width) / 2, buttonYLocation);
-	bounceButton.mousePressed(function(){ img = bounceImg;});
-
-	buttonYLocation += bounceButton.height + 10;
-	barrelButton = createButton("Barrel Field", "Click to change to slalom");
-	barrelButton.parent("#buttons");
-	barrelButton.position((windowWidth - width) / 2, buttonYLocation);
-	barrelButton.mousePressed(function(){ img = barrelImg;});
-
-	buttonYLocation += bounceButton.height + 10;
 	infiniteButton = createButton("Infinite Recharge Field", "Click to change to slalom");
 	infiniteButton.parent("#buttons");
 	infiniteButton.position((windowWidth - width) / 2, buttonYLocation);
 	infiniteButton.mousePressed(function(){ img = infiniteImg;});
+
 }
 
 function writeDataToCsv()
@@ -101,7 +81,7 @@ function writeDataToCsv()
 		let pose = smoothControl.poses[i];
 
 		let newRow = data.addRow();
-		let stringOut = "CHANGEME.add(new TargetPosition2D("+str(pose.position.x) + 
+		let stringOut = "m_targetPath.add(new TargetPosition2D("+str(pose.position.x) + 
 		", " + str(pose.position.y) + 
 		", Math.toRadians(" + str(degrees(pose.headingRadians)) + ")" +
 		", " + str(pose.getVelocity()) + "d));";
@@ -302,15 +282,17 @@ class SmoothControlPath
 
 		//Draw path to next pose
 		push();
-		strokeWeight(5);
-		noFill();
-		beginShape();
-		curveVertex(createVector(pose.position.x, pose.position.y));
+		let wheel_stroke = (24.831/12.0) * (800/30)
+		strokeWeight(0);
+		fill(200, 60);
+		//beginShape();
+		//curveVertex(createVector(pose.position.x, pose.position.y));
 		for(let i = 0; i < pathPoints.length; i++)
 		{
-			curveVertex(pathPoints[i][0], pathPoints[i][1]);
+			//curveVertex(pathPoints[i][0], pathPoints[i][1]);
+			circle(pathPoints[i][0], pathPoints[i][1], wheel_stroke);
 		}
-		endShape();
+		//endShape();
 		pop();
 
 		//Draw triangle
