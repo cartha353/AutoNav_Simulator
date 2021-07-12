@@ -23,6 +23,7 @@ function preload() {
   slalomImg = loadImage('assets/2021-slalom.png');
 	bounceImg = loadImage('assets/2021-bounce.png');
 	barrelImg = loadImage('assets/2021-barrel.png');
+	infiniteImg = loadImage('assets/2021-infinite.png');
 }
 
 function setup() 
@@ -64,6 +65,11 @@ function setup()
 	barrelButton.position((windowWidth - width) / 2, buttonYLocation);
 	barrelButton.mousePressed(function(){ img = barrelImg;});
 
+	buttonYLocation += bounceButton.height + 10;
+	infiniteButton = createButton("Infinite Recharge Field", "Click to change to slalom");
+	infiniteButton.parent("#buttons");
+	infiniteButton.position((windowWidth - width) / 2, buttonYLocation);
+	infiniteButton.mousePressed(function(){ img = infiniteImg;});
 }
 
 function writeDataToCsv()
